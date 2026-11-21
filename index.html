@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101722">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MONKEY TURN V">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>MONKEY TURN V SETTING PRO</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{background:#101722;color:white;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{height:100vh;height:100dvh;width:100%;max-width:600px;margin:auto;padding:8px;display:flex;flex-direction:column;gap:7px;overflow:hidden}
+header{height:27px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+header span{color:#61e5a0;font-size:10px}
+.result{flex-shrink:0;background:#1b2939;padding:9px;border-radius:10px}
+.best{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.best small{color:#aebdd0}.best strong{font-size:23px;color:#61e5a0}
+.probabilities{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.prob{text-align:center;display:flex;flex-direction:column;gap:3px}
+.prob small{color:#b9c8d9;font-size:10px}.prob b{font-size:12px}
+.bar{height:5px;border-radius:5px;background:#35465a;overflow:hidden}
+.bar div{height:100%;background:#39d99a}
+.result>small{display:block;color:#91a5bc;font-size:9px;margin-top:6px}
+nav{display:flex;gap:5px;overflow-x:auto;overflow-y:hidden;flex-shrink:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;min-width:65px;padding:7px 10px;border:0;border-radius:6px;background:#263649;color:white;font-size:11px;white-space:nowrap}
+nav button.active{background:#277c69}
+.input-section{min-height:0;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.input-section h3{margin:0 0 6px;font-size:13px;flex-shrink:0}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;align-content:start;min-height:0;overflow-y:auto;padding-bottom:3px}
+.field{min-width:0;background:#1b2939;border-radius:7px;padding:5px}
+.field label{display:block;font-size:10px;color:#d5dfeb;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.controls{display:grid;grid-template-columns:32px minmax(0,1fr) 32px;gap:4px;align-items:center}
+.controls button{height:31px;border:0;border-radius:5px;background:#354b63;color:white;font-size:17px;touch-action:manipulation}
+.controls button:disabled{opacity:.3}
+.controls input{width:100%;min-width:0;height:31px;padding:0;text-align:center;font-size:16px;border:1px solid #40546b;border-radius:5px;background:#101722;color:white;appearance:textfield}
+.controls input::-webkit-inner-spin-button{-webkit-appearance:none}
+.errors{flex-shrink:0;color:#ffaaaa;font-size:10px}.errors p{margin:2px}
+footer{min-height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:4px}
+footer>small{font-size:9px;color:#91a5bc;white-space:nowrap}
+.footer-stats{display:flex;align-items:center;gap:7px}
+.footer-stat{display:flex;flex-direction:column;align-items:center;gap:1px}
+.footer-stat small{font-size:8px;color:#91a5bc;white-space:nowrap}
+.footer-stat b{font-size:10px;color:#61e5a0;white-space:nowrap}
+footer button{border:0;border-radius:6px;padding:7px 9px;background:#793b43;color:white;font-size:10px;white-space:nowrap}
+button{cursor:pointer}
+@media(max-height:750px){.app{gap:5px;padding:6px}.result{padding:6px}.best{margin-bottom:4px}.field{padding:3px}.field label{margin-bottom:2px}.controls button,.controls input{height:27px}.controls{grid-template-columns:29px minmax(0,1fr) 29px}nav button{padding:6px 9px}.input-section h3{margin-bottom:3px}}
+@media(max-height:650px){.app{gap:4px}.result{padding:5px}.probabilities{gap:3px}.fields{gap:4px}}
+</style>
+</head>
+<body>
+<main class="app">
+<header><b>MONKEY TURN V</b><span>SETTING PRO</span></header>
+<section class="result">
+ <div class="best"><small>最有力設定</small><strong id="best">判定保留</strong></div>
+ <div class="probabilities" id="probabilities"></div>
+ <small>事前確率：全設定20%固定</small>
+</section>
+<nav id="tabs"></nav>
+<section class="input-section">
+ <h3 id="section-title">基本入力</h3>
+ <div class="fields" id="fields"></div>
+</section>
+<div class="errors" id="errors"></div>
+<footer>
+ <small>入力値保持</small>
+ <div class="footer-stats">
+  <div class="footer-stat"><small>AT初当たり</small><b id="at-rate">--</b></div>
+  <div class="footer-stat"><small>5枚役</small><b id="five-rate">--</b></div>
+ </div>
+ <button id="reset">全リセット</button>
+</footer>
+</main>
+<script>
+const INIT={normal:"",total:"",at:"",five:"",wc:0,wcd:0,boat:0,boatd:0,wcm:0,wcmd:0,sc:0,scd:0,scm:0,scmd:0,ends:"",immediate:0,cb:0,eb:0,cwc:0,ewc:0,cwcm:0,ewcm:0,cscm:0,escm:0,csc:0,esc:0,calm:0,kehai:0,blue:0,yellow:0,black:0};
+const SETTINGS=[1,2,4,5,6];
+const RATES={five:[1/38.15,1/36.86,1/30.27,1/24.51,1/22.53],weakDirect:[0,0,.004,.004,.004],weakChanceDirect:[0,0,.008,.020,.031],strongDirect:[.004,.012,.020,.039,.063],immediate:[.016,.017,.022,.030,.037],chargeWeak:[.250,.262,.328,.391,.430],chargeWeakChance:[.313,.320,.375,.406,.469],chargeStrongChance:[.500,.508,.586,.625,.664],blue:[.500,.600,.500,.250,.455],black:[.0125,.015,.040,.045,.045]};
+const FIRST_HIT=[1/299.8,1/295.5,1/258.8,1/235.7,1/222.9],DIALOGUE_P=[.5,.6,.6,.3,.6];
+const FIELDS={basic:[["normal","通常時ゲーム数"],["total","総回転数"],["at","AT初当たり回数"],["five","5枚役回数"]],direct:[["wc","弱チェリー出現"],["wcd","弱チェリー直撃"],["boat","ボート出現"],["boatd","ボート直撃"],["wcm","弱チャンス目出現"],["wcmd","弱チャンス目直撃"],["sc","強チェリー出現"],["scd","強チェリー直撃"],["scm","強チャンス目出現"],["scmd","強チャンス目直撃"]],immediate:[["ends","AT終了回数"],["immediate","即優出回数"]],charge:[["cb","ボート回数"],["eb","ボートEX獲得"],["cwc","弱チェリー回数"],["ewc","弱チェリーEX獲得"],["cwcm","弱チャンス目回数"],["ewcm","弱チャンス目EX獲得"],["cscm","強チャンス目回数"],["escm","強チャンス目EX獲得"],["csc","強チェリー回数（参考）"],["esc","強チェリーEX（参考）"]],dialogue:[["calm","落ち着くんだ憲二"],["kehai","この気配は!?"]],medal:[["blue","青メダル回数"],["yellow","黄メダル回数"],["black","黒メダル回数"]]};
+const TABS=[["basic","基本"],["direct","直撃"],["immediate","即優出"],["charge","激走CH"],["dialogue","セリフ"],["medal","メダル"]];
+let v={...INIT},tab="basic";
+const n=k=>Math.max(0,Number(v[k])||0);
+const has=k=>v[k]!==""&&v[k]!==null&&v[k]!==undefined&&Number.isFinite(Number(v[k]))&&Number(v[k])>=0;
+function binomialLog(x,t,p){if(t===0)return 0;if(x>t)return-Infinity;if(p===0)return x===0?0:-Infinity;if(p===1)return x===t?0:-Infinity;return x*Math.log(p)+(t-x)*Math.log(1-p)}
+function poissonLog(x,t,p){if(t<=0)return x===0?0:-Infinity;if(p===0)return x===0?0:-Infinity;return x*Math.log(p)-t*p}
+function calculate(){
+ const trials=[],errors=[];
+ const pairs=[["wc","wcd",RATES.weakDirect],["boat","boatd",RATES.weakDirect],["wcm","wcmd",RATES.weakChanceDirect],["sc","scd",RATES.strongDirect],["scm","scmd",RATES.strongDirect],["ends","immediate",RATES.immediate],["cb","eb",RATES.chargeWeak],["cwc","ewc",RATES.chargeWeak],["cwcm","ewcm",RATES.chargeWeakChance],["cscm","escm",RATES.chargeStrongChance]];
+ pairs.forEach(([a,b,r])=>{if(has(a)&&has(b))trials.push({n:n(a),x:n(b),r})});
+ if(has("five")&&has("total")&&n("five")>n("total"))errors.push("5枚役回数が総回転数を超えています");
+ if(trials.some(t=>t.x>t.n))errors.push("当選回数が成立回数を超えています");
+ if(has("at")&&!has("normal"))errors.push("通常時ゲーム数が必要です");
+ const medalTotal=n("blue")+n("yellow")+n("black");
+ if(has("ends")&&medalTotal>n("ends"))errors.push("メダル合計がAT終了回数を超えています");
+ if(!has("ends")&&medalTotal>0)errors.push("メダル入力にはAT終了回数が必要です");
+ const useAt=has("normal")&&has("at"),useFive=has("total")&&has("five"),useDialogue=has("calm")&&has("kehai");
+ const logs=SETTINGS.map((s,i)=>{let z=0;if(useAt)z+=poissonLog(n("at"),n("normal"),FIRST_HIT[i]);if(useFive)z+=.5*binomialLog(n("five"),n("total"),RATES.five[i]);trials.forEach(t=>z+=binomialLog(t.x,t.n,t.r[i]));if(useDialogue){const d=n("calm")+n("kehai");if(d>0)z+=binomialLog(n("kehai"),d,DIALOGUE_P[i])}if(has("ends"))z+=binomialLog(n("black"),n("ends"),RATES.black[i]);const medals=n("blue")+n("yellow");if(medals>0)z+=binomialLog(n("blue"),medals,RATES.blue[i]);return z+Math.log(.2)});
+ const max=Math.max(...logs),raw=logs.map(x=>Math.exp(x-max)),sum=raw.reduce((a,b)=>a+b,0),valid=errors.length===0&&Number.isFinite(sum)&&sum>0;
+ return {valid,errors,probs:valid?raw.map(x=>x/sum*100):[20,20,20,20,20]};
+}
+function put(k,x){const value=x===""?"":String(Math.max(0,Math.floor(Number(x)||0)));v={...v,[k]:value,...(k==="at"?{ends:value}:{})};render()}
+function render(){
+ const r=calculate();
+ document.getElementById("best").textContent=r.valid?"設定 "+SETTINGS[r.probs.indexOf(Math.max(...r.probs))]:"判定保留";
+ document.getElementById("probabilities").innerHTML=SETTINGS.map((s,i)=>`<div class="prob"><small>設定${s}</small><b>${r.valid?r.probs[i].toFixed(1)+"%":"--"}</b><div class="bar"><div style="width:${r.valid?r.probs[i]:0}%"></div></div></div>`).join("");
+ document.getElementById("tabs").innerHTML=TABS.map(t=>`<button data-tab="${t[0]}" class="${tab===t[0]?"active":""}">${t[1]}</button>`).join("");
+ document.getElementById("tabs").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{tab=b.dataset.tab;render()}));
+ document.getElementById("section-title").textContent=TABS.find(t=>t[0]===tab)[1]+"入力";
+ document.getElementById("fields").innerHTML=FIELDS[tab].map(([key,label])=>`<div class="field"><label>${label}</label><div class="controls"><button data-minus="${key}" ${!String(v[key])||n(key)===0?"disabled":""}>－</button><input type="number" inputmode="numeric" min="0" placeholder="－" value="${v[key]}" data-input="${key}"><button data-plus="${key}">＋</button></div></div>`).join("");
+ document.querySelectorAll("[data-minus]").forEach(b=>b.addEventListener("click",()=>put(b.dataset.minus,n(b.dataset.minus)-1)));
+ document.querySelectorAll("[data-plus]").forEach(b=>b.addEventListener("click",()=>put(b.dataset.plus,n(b.dataset.plus)+1)));
+ document.querySelectorAll("[data-input]").forEach(inp=>inp.addEventListener("input",()=>{const key=inp.dataset.input;const value=inp.value;const cursor=inp.selectionStart;put(key,value);const newInput=document.querySelector(`[data-input="${key}"]`);newInput.focus();try{newInput.setSelectionRange(cursor,cursor)}catch(e){}}));
+ document.getElementById("errors").innerHTML=r.errors.map(e=>`<p>${e}</p>`).join("");
+ document.getElementById("at-rate").textContent=n("at")>0&&n("normal")>0?"1/"+(n("normal")/n("at")).toFixed(2):"--";
+ document.getElementById("five-rate").textContent=n("five")>0&&n("total")>0?"1/"+(n("total")/n("five")).toFixed(2):"--";
+}
+document.getElementById("reset").addEventListener("click",()=>{v={...INIT};tab="basic";render()});
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+render();
+</script>
+</body></html>
